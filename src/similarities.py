@@ -53,10 +53,14 @@ class Embedding:
             for second_word_tuple in second_keywords:
                 second_word = second_word_tuple[0]
 
-                word_one_emb = self.get_word_embedding(first_sentence, word)
-                word_two_emb = self.get_word_embedding(
-                    second_sentence, second_word
-                )
+                try:
+                    word_one_emb = self.get_word_embedding(
+                        first_sentence, word)
+                    word_two_emb = self.get_word_embedding(
+                        second_sentence, second_word
+                    )
+                except AssertionError as e:
+                    print(e, second_word, second_sentence)
 
                 word_comparisons.append(
                     (
