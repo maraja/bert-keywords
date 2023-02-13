@@ -15,4 +15,8 @@ class Keywords():
     """
 
     def get_keywords(self, data: str) -> List[Tuple[str, float]]:
-        return self.kw_model.extract_keywords(data, keyphrase_ngram_range=(1, 2), stop_words=None)
+        return self.kw_model.extract_keywords(data, keyphrase_ngram_range=(1, 1), stop_words=None)
+
+    
+    def get_phrases(self, data: str, min_ngram=2, max_ngram=3) -> List[Tuple[str, float]]:
+        return self.kw_model.extract_keywords(data, keyphrase_ngram_range=(min_ngram, max_ngram), stop_words=None)
