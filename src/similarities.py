@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModel
 from functools import cached_property
 from typing import List, Tuple
+from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 import torch
 import re
@@ -11,11 +12,15 @@ class Embedding:
         self.model = model
         self.tokenizer = tokenizer
 
+        count_vectorizer = CountVectorizer()
+        self.count_tokenizer = count_vectorizer.build_tokenizer()
+
     def get_word_embedding(self, sentence: str, word: str, index: int = None) -> torch.tensor:
         # remove subsequent spaces
         clean_sentence = re.sub(' +', ' ', sentence)
+        tokenized_sentence = self.count_tokenizer(clean_sentence)
         if index is None:
-            for i, _word in enumerate(clean_sentence.split(' ')):
+            for i, _word in enumerate(tokenized_sentence):
                 if _word.lower() == word.lower():
                     index = i
                     break
@@ -46,6 +51,7 @@ class Embedding:
         second_sentence: str,
         first_keywords: List[Tuple[str, float]],
         second_keywords: List[Tuple[str, float]],
+        suppress_errors=True
     ):
         word_comparisons = []
         for word_tuple in first_keywords:
@@ -59,16 +65,17 @@ class Embedding:
                     word_two_emb = self.get_word_embedding(
                         second_sentence, second_word
                     )
-                except AssertionError as e:
-                    print(e, second_word, second_sentence)
 
-                word_comparisons.append(
-                    (
-                        word,
-                        second_word,
-                        self.get_similarity(word_one_emb, word_two_emb),
+                    word_comparisons.append(
+                        (
+                            word,
+                            second_word,
+                            self.get_similarity(word_one_emb, word_two_emb),
+                        )
                     )
-                )
+                except AssertionError as e:
+                    if not suppress_errors:
+                        print(e, second_word, second_sentence)
 
         return word_comparisons
 
