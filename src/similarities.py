@@ -45,12 +45,11 @@ class Embedding:
         return torch.cosine_similarity(emb1.reshape(1, -1), emb2.reshape(1, -1))
 
     # utility function to create comparisons between two rows of keywords
-    def compare_keywords(
+    # this function includes the keywords with the embeddings
+    def compare_keyword_tuples(
         self,
-        first_sentence: str,
-        second_sentence: str,
-        first_keywords: List[Tuple[str, float]],
-        second_keywords: List[Tuple[str, float]],
+        first_keywords: List[Tuple[str, float, torch.Tensor]],
+        second_keywords: List[Tuple[str, float, torch.Tensor]],
         suppress_errors=True
     ):
         word_comparisons = []
@@ -58,6 +57,35 @@ class Embedding:
             word = word_tuple[0]
             for second_word_tuple in second_keywords:
                 second_word = second_word_tuple[0]
+
+                try:
+                    word_one_emb = word[2]
+                    word_two_emb = second_word[2]
+
+                    word_comparisons.append(
+                        (
+                            word,
+                            second_word,
+                            self.get_similarity(word_one_emb, word_two_emb),
+                        )
+                    )
+                except AssertionError as e:
+                    if not suppress_errors:
+                        print(e, word, second_word)
+
+        return word_comparisons
+
+    def compare_keywords(
+        self,
+        first_sentence: str,
+        second_sentence: str,
+        first_keywords: List[str],
+        second_keywords: List[str],
+        suppress_errors=True
+    ):
+        word_comparisons = []
+        for word in first_keywords:
+            for second_word in second_keywords:
 
                 try:
                     word_one_emb = self.get_word_embedding(
@@ -78,7 +106,6 @@ class Embedding:
                         print(e, second_word, second_sentence)
 
         return word_comparisons
-
 
 class Similarities:
     """create instance of similarities
