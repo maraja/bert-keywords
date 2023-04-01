@@ -59,8 +59,8 @@ class Embedding:
                 second_word = second_word_tuple[0]
 
                 try:
-                    word_one_emb = word[2]
-                    word_two_emb = second_word[2]
+                    word_one_emb = word_tuple[2]
+                    word_two_emb = second_word_tuple[2]
 
                     word_comparisons.append(
                         (
@@ -106,6 +106,7 @@ class Embedding:
                         print(e, second_word, second_sentence)
 
         return word_comparisons
+
 
 class Similarities:
     """create instance of similarities
