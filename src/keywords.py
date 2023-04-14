@@ -13,7 +13,9 @@ class Keywords():
     def __init__(self, bert_model: AutoModel, tokenizer: AutoTokenizer):
         embedding_model = tensorflow_hub.load(
             "https://tfhub.dev/google/universal-sentence-encoder/4")
-        self.kw_model = KeyBERT(model=embedding_model)
+        # self.kw_model = KeyBERT(model=embedding_model)
+        # self.kw_model = KeyBERT(model="sentence-transformers/LaBSE")
+        self.kw_model = KeyBERT(model="bert-base-uncased")
         self.bert_model = bert_model
         self.tokenizer = tokenizer
 
@@ -46,16 +48,52 @@ class Keywords():
         embedding = hidden_states[[tup[0][0] for tup in token_ids]]
         return embedding
 
-    """uses keybert to generate keywords from a sentence
+    """uses keybert to generate keywords from a sentence. Gets word embeddings from BERT.
     ex: [('continual', 0.6023), ('change', 0.4642), ('life', 0.4436), ('essence', 0.3975)]
     """
     def get_keywords_with_embeddings(self, data: str) -> List[Tuple[str, float, torch.Tensor]]:
-        keywords = self.kw_model.extract_keywords(data, keyphrase_ngram_range=(1, 1), stop_words=None)
-        kw_tuples = []
+        keywords = self.kw_model.extract_keywords(data, keyphrase_ngram_range=(1, 1))
+
+        keywords_with_embeddings = []
         for kw in keywords:
-            embedding = self.get_word_embedding(data, kw[0])
-            kw_tuples.append((kw[0], kw[1], embedding))
-        return kw_tuples
+            # only add the word if it's not numeric
+            if not kw[0].isnumeric():
+                embedding = self.get_word_embedding(data, kw[0])
+                keywords_with_embeddings.append((kw[0], kw[1], embedding))
+
+        # sort by descending to have the most important words first
+        desc_sorted_words = sorted(
+            keywords_with_embeddings, 
+            key=lambda x: x[1]
+        )[::-1]
+        return desc_sorted_words
+
+    """uses keybert to generate keywords from a sentence, returns keybert based word embeddings
+    ex: [('continual', 0.6023), ('change', 0.4642), ('life', 0.4436), ('essence', 0.3975)]
+    """
+    def get_keywords_with_kb_embeddings(self, data: str) -> List[Tuple[str, float, torch.Tensor]]:
+        doc_embeddings, word_embeddings = self.kw_model.extract_embeddings(data, keyphrase_ngram_range=(1, 1))
+
+        keywords = self.kw_model.extract_keywords(
+            data, doc_embeddings=doc_embeddings, word_embeddings=word_embeddings, keyphrase_ngram_range=(1, 1)
+        )
+
+        keywords_with_embeddings = []
+        for kw, we in zip(keywords, word_embeddings):
+            # all the keywords are numbers, just return them and move on.
+            if len([kw[0].isnumeric() for kw in keywords_with_embeddings]) == len(keywords_with_embeddings):
+                keywords_with_embeddings.append((kw[0], kw[1], torch.tensor(we)))
+            else:
+                # only add the word if it's not numeric
+                if not kw[0].isnumeric():
+                    keywords_with_embeddings.append((kw[0], kw[1], torch.tensor(we)))
+
+        # sort by descending to have the most important words first
+        desc_sorted_words = sorted(
+            keywords_with_embeddings, 
+            key=lambda x: x[1]
+        )[::-1]
+        return desc_sorted_words
         
 
     def get_keywords(self, data: str, emb:bool=True) -> List[Tuple[str, float, torch.Tensor]]:
