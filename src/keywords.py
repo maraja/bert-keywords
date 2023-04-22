@@ -17,7 +17,8 @@ class Keywords:
         # self.kw_model = KeyBERT(model=embedding_model)
         # self.kw_model = KeyBERT(model="sentence-transformers/LaBSE")
         # self.kw_model = KeyBERT(model="bert-base-uncased")
-        self.kw_model = KeyBERT(model="all-MiniLM-L12-v2")
+        self.kw_model = KeyBERT(model="roberta-base")
+        # self.kw_model = KeyBERT(model="sentence-transformers/all-MiniLM-L6-v2")
         self.bert_model = bert_model
         self.tokenizer = tokenizer
 
@@ -36,7 +37,9 @@ class Keywords:
                     index = i
                     break
 
-        assert index is not None, "Error: word not found in provided sentence."
+        # assert index is not None, f"Error: word {word} not found in provided sentence."
+        if index is None:
+            return False
         tokens = self.tokenizer(clean_sentence, return_tensors="pt")
 
         token_ids = [np.where(np.array(tokens.word_ids()) == idx) for idx in [index]]
@@ -62,9 +65,11 @@ class Keywords:
 
         keywords_with_embeddings = []
         for kw in keywords:
-            # only add the word if it's not numeric
-            if not kw[0].isnumeric():
-                embedding = self.get_word_embedding(data, kw[0])
+            # # only add the word if it's not numeric
+            # if not kw[0].isnumeric():
+            embedding = self.get_word_embedding(data, kw[0])
+            # can't find the word, proceeed without it.
+            if embedding is not False:
                 keywords_with_embeddings.append((kw[0], kw[1], embedding))
 
         # sort by descending to have the most important words first
