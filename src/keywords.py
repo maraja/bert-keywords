@@ -16,8 +16,8 @@ class Keywords:
         )
         # self.kw_model = KeyBERT(model=embedding_model)
         # self.kw_model = KeyBERT(model="sentence-transformers/LaBSE")
-        # self.kw_model = KeyBERT(model="bert-base-uncased")
-        self.kw_model = KeyBERT(model="roberta-base")
+        self.kw_model = KeyBERT(model="bert-base-uncased")
+        # self.kw_model = KeyBERT(model="roberta-base")
         # self.kw_model = KeyBERT(model="sentence-transformers/all-MiniLM-L6-v2")
         self.bert_model = bert_model
         self.tokenizer = tokenizer
